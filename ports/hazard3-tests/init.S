@@ -122,24 +122,6 @@ j \name
 core1_entry_vector:
 	.word 0
 
-# .global _exit
-# _exit:
-# 	li a1, IO_EXIT
-# 	sw a0, (a1)
-
-# .global _sbrk
-# _sbrk:
-# 	la a1, heap_ptr
-# 	lw a2, (a1)
-# 	add a0, a0, a2
-# 	sw a0, (a1)
-# 	mv a0, a2
-# 	ret
-
-# .p2align 2
-# heap_ptr:
-# 	.word _end
-
 .global .halt
 .halt:
 	j .halt
@@ -238,3 +220,19 @@ weak_handler isr_external_irq
 
 // You can relax now
 .option pop
+
+// Missing libgcc routines for non-bitmanip builds -- will get gc'd if unused
+
+.section .text.__clzsi2, "ax"
+.global __clzsi2
+__clzsi2:
+	li a1, 0
+	bnez a0, 2f
+	ret
+1:
+	addi a1, a1, 1
+	slli a0, a0, 1
+2:
+	bltz a0, 1b
+	mv a0, a1
+	ret

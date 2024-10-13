@@ -33,6 +33,6 @@ typedef long mp_off_t;
 #define MICROPY_HW_BOARD_NAME "hazard3-testbench"
 #define MICROPY_HW_MCU_NAME "Hazard3"
 
-#define MICROPY_HEAP_SIZE      (64 * 1024)
+#define MICROPY_HEAP_SIZE      (32 * 1024)
 
 #define MP_STATE_PORT MP_STATE_VM

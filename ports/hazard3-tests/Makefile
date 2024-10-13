@@ -15,7 +15,7 @@ INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
 
-CFLAGS_MARCH = -march=rv32imac_zicsr_zifencei_zba_zbb_zbkb_zbs
+CFLAGS_MARCH = -march=rv32im_zicsr_zifencei_zca_zcb
 CFLAGS += $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_MARCH) $(COPT)
 LDFLAGS += -nostdlib -T hazard3_tb.ld -Map=$@.map --cref --gc-sections
 
