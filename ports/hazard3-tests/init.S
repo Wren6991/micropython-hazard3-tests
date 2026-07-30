@@ -7,7 +7,7 @@
 
 #define hazard3_csr_msleep     0xbf0 // M-mode sleep control register
 
-#define IO_BASE 0x80000000
+#define IO_BASE 0xc0000000
 #define IO_PRINT_CHAR (IO_BASE + 0x0)
 #define IO_PRINT_U32  (IO_BASE + 0x4)
 #define IO_EXIT       (IO_BASE + 0x8)
