@@ -33,9 +33,7 @@ typedef struct {
 
 // Receive single character
 int mp_hal_stdin_rx_chr(void) {
-    // Currently not implemented, so just kill the simulator when this happens.
-    mm_io->exit = 1234;
-    return 0;
+    return mm_io->print_char;
 }
 
 // Send string of given length
