@@ -73,6 +73,9 @@ j \name
 	la a0, .vector_table + 1
 	csrw mtvec, a0
 
+	// Setup gp for all cores
+	la gp, __global_pointer$
+
 	// Put spare cores to sleep before setting up core 0 stack
 	csrr a0, mhartid
 	bnez a0, .core1_wait

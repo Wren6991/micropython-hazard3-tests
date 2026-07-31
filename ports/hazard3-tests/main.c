@@ -50,10 +50,18 @@ int main(int argc, char **argv) {
         }
     }
     #else
-    pyexec_friendly_repl();
+    for (;;) {
+        int ret;
+        if (pyexec_mode_kind == PYEXEC_MODE_RAW_REPL) {
+            ret = pyexec_raw_repl();
+        } else {
+            ret = pyexec_friendly_repl();
+        }
+        if (ret != 0) {
+            mp_printf(MP_PYTHON_PRINTER, "MPY: soft reboot\n");
+        }
+    }
     #endif
-    // do_str("print('hello world!', list(x+1 for x in range(10)), end='eol\\n')", MP_PARSE_SINGLE_INPUT);
-    // do_str("for i in range(10):\r\n  print(i)", MP_PARSE_FILE_INPUT);
     #else
     pyexec_frozen_module("frozentest.py", false);
     #endif
@@ -80,6 +88,11 @@ mp_lexer_t *mp_lexer_new_from_file(qstr filename) {
 mp_import_stat_t mp_import_stat(const char *path) {
     return MP_IMPORT_STAT_NO_EXIST;
 }
+
+mp_obj_t mp_builtin_open(size_t n_args, const mp_obj_t *args, mp_map_t *kwargs) {
+    return mp_const_none;
+}
+MP_DEFINE_CONST_FUN_OBJ_KW(mp_builtin_open_obj, 1, mp_builtin_open);
 
 void nlr_jump_fail(void *val) {
     while (1) {
