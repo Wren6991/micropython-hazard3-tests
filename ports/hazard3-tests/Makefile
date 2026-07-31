@@ -2,12 +2,14 @@ include ../../py/mkenv.mk
 
 # qstr definitions (must come before including py.mk)
 QSTR_DEFS = qstrdefsport.h
+FROZEN_MANIFEST ?= manifest.py
 
 # MicroPython feature configurations
 MICROPY_ROM_TEXT_COMPRESSION ?= 1
 
 # include py core make definitions
 include $(TOP)/py/py.mk
+include $(TOP)/extmod/extmod.mk
 
 CROSS_COMPILE ?= riscv32-unknown-elf-
 
@@ -38,11 +40,11 @@ LIBS =
 SRC_C = \
 	main.c \
 	uart_core.c \
+	mphalport.c \
 	shared/libc/printf.c \
 	shared/readline/readline.c \
 	shared/runtime/pyexec.c \
 	shared/runtime/stdout_helpers.c \
-	$(BUILD)/_frozen_mpy.c \
 
 SRC_C += shared/libc/string0.c
 
@@ -50,16 +52,12 @@ SRC_O += init.o
 
 SRC_QSTR += shared/readline/readline.c shared/runtime/pyexec.c
 
-OBJ += $(PY_CORE_O)
+OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_O))
 OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
 OBJ += $(addprefix $(BUILD)/, $(SRC_CXX:.cpp=.o))
 
 all: $(BUILD)/firmware.bin $(BUILD)/firmware.dis
-
-$(BUILD)/_frozen_mpy.c: $(TOP)/tests/assets/frozentest.mpy $(BUILD)/genhdr/qstrdefs.generated.h
-	$(ECHO) "MISC freezing bytecode"
-	$(Q)$(TOP)/tools/mpy-tool.py -f -q $(BUILD)/genhdr/qstrdefs.preprocessed.h -mlongint-impl=none $< > $@
 
 $(BUILD)/firmware.elf: $(OBJ)
 	$(ECHO) "LINK $@"
