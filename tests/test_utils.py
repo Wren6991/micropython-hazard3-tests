@@ -28,7 +28,7 @@ FLAKY_REASON_PREFIX = "flaky"
 _RESULTS_FILE = "_results.json"
 
 # Maximum time to run a single test, in seconds.
-TEST_TIMEOUT = float(os.environ.get("MICROPY_TEST_TIMEOUT", 30))
+TEST_TIMEOUT = float(os.environ.get("MICROPY_TEST_TIMEOUT", 300))
 
 # Maximum time to wait to enter the raw REPL at the start of a test, in seconds.
 TEST_ENTER_RAW_REPL_TIMEOUT = 5

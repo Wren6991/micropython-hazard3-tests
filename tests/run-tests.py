@@ -747,7 +747,7 @@ class ThreadSafeCounter:
         return self._value
 
 
-def run_tests(pyb, tests, args, result_dir, num_threads=1):
+def run_tests(pyb, tests, args, result_dir, num_threads=1, pyb_pool=None):
     testcase_count = ThreadSafeCounter()
     raw_repl_failure_count = ThreadSafeCounter()
     test_results = ThreadSafeCounter([])
@@ -947,7 +947,18 @@ def run_tests(pyb, tests, args, result_dir, num_threads=1):
 
     skip_tests = [os.path.realpath(base_path(skip_test)) for skip_test in skip_tests]
 
+    # Assign each worker thread its own pyboard instance for parallel exec: targets.
+    _worker_pyb = threading.local()
+    _pyb_iter = iter(pyb_pool) if pyb_pool else None
+
+    def _init_worker():
+        if _pyb_iter is not None:
+            _worker_pyb.pyb = next(_pyb_iter)
+
     def run_one_test(test_file):
+        if raw_repl_failure_count.value > TEST_MAXIMUM_RAW_REPL_FAILURES:
+            return
+        this_pyb = getattr(_worker_pyb, "pyb", None) if _pyb_iter is not None else pyb
         test_file_abspath = os.path.abspath(test_file).replace("\\", "/")
         # If test_file is one of our own tests always make it relative to our tests/ dir and
         # otherwise use the absolute path, regardless of actual path passed,
@@ -1016,16 +1027,16 @@ def run_tests(pyb, tests, args, result_dir, num_threads=1):
             return
 
         # Run the test on the MicroPython target.
-        output_mupy = run_micropython(pyb, args, test_file, test_file_abspath)
+        output_mupy = run_micropython(this_pyb, args, test_file, test_file_abspath)
 
         # Check if the target requested to skip this test.
         if output_mupy == b"SKIP\n":
-            if pyb is not None and hasattr(pyb, "read_until"):
+            if this_pyb is not None and hasattr(this_pyb, "read_until"):
                 # Running on a target over a serial connection, and the target requested
                 # to skip the test.  It does this via a SystemExit which triggers a soft
                 # reset.  Wait for the soft reset to finish, so we don't interrupt the
                 # start-up code (eg boot.py) when preparing to run the next test.
-                pyb.read_until(1, b"raw REPL; CTRL-B to exit\r\n")
+                this_pyb.read_until(1, b"raw REPL; CTRL-B to exit\r\n")
             print("skip ", test_file)
             test_results.append((test_file, "skip", ""))
             return
@@ -1145,12 +1156,14 @@ def run_tests(pyb, tests, args, result_dir, num_threads=1):
                         )
                     )
 
-    if pyb:
+    if pyb and pyb_pool is None:
         num_threads = 1
+    if pyb_pool is not None:
+        num_threads = min(num_threads, len(pyb_pool))
 
     try:
         if num_threads > 1:
-            pool = ThreadPool(num_threads)
+            pool = ThreadPool(num_threads, initializer=_init_worker)
             pool.map(run_one_test, tests)
         else:
             for test in tests:
@@ -1336,6 +1349,14 @@ the last matching regex is used:
     # Get the test instance to run on.
     pyb = get_test_instance(args.test_instance, args.baudrate, args.user, args.password)
 
+    # For exec: targets, spawn additional instances for parallel test execution.
+    pyb_pool = None
+    if args.test_instance.startswith("exec:") and args.jobs > 1:
+        pyb_pool = [pyb] + [
+            get_test_instance(args.test_instance, args.baudrate, args.user, args.password)
+            for _ in range(args.jobs - 1)
+        ]
+
     # Automatically detect the platform.
     detect_test_platform(pyb, args)
 
@@ -1414,6 +1435,9 @@ the last matching regex is used:
     # If any tests need it, prepare the target_wiring script for the target.
     if pyb and any(test.endswith(tests_requiring_target_wiring) for test in tests):
         detect_target_wiring_script(pyb, args)
+        if pyb_pool:
+            for p in pyb_pool[1:]:
+                p.target_wiring_script = pyb.target_wiring_script
 
     # End the target information line.
     print()
@@ -1431,10 +1455,13 @@ the last matching regex is used:
 
     try:
         os.makedirs(args.result_dir, exist_ok=True)
-        test_results, testcase_count = run_tests(pyb, tests, args, args.result_dir, args.jobs)
+        test_results, testcase_count = run_tests(pyb, tests, args, args.result_dir, args.jobs, pyb_pool)
         res = create_test_report(args, test_results, testcase_count)
     finally:
-        if pyb:
+        if pyb_pool:
+            for p in pyb_pool:
+                p.close()
+        elif pyb:
             pyb.close()
 
     if not res:
