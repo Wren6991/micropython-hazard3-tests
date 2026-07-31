@@ -33,6 +33,7 @@ static char heap[MICROPY_HEAP_SIZE];
 #endif
 
 int main(int argc, char **argv) {
+soft_reboot:
     int stack_dummy;
     stack_top = (char *)&stack_dummy;
 
@@ -58,15 +59,16 @@ int main(int argc, char **argv) {
             ret = pyexec_friendly_repl();
         }
         if (ret != 0) {
-            mp_printf(MP_PYTHON_PRINTER, "MPY: soft reboot\n");
+            break;
         }
     }
+    mp_printf(MP_PYTHON_PRINTER, "MPY: soft reboot\n");
     #endif
     #else
     pyexec_frozen_module("frozentest.py", false);
     #endif
     mp_deinit();
-    return 0;
+    goto soft_reboot;
 }
 
 #if MICROPY_ENABLE_GC
