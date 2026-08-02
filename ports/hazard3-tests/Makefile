@@ -17,7 +17,8 @@ INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
 
-CFLAGS_MARCH = -march=rv32imac_zicsr_zifencei_zba_zbb_zbkb_zbs
+# -fdisable-rtl-popretz is due to a GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=126454
+CFLAGS_MARCH = -march=rv32imab_zicsr_zifencei_zbkb_zca_zcb_zcmp -fdisable-rtl-popretz
 CFLAGS += $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_MARCH) $(COPT)
 LDFLAGS += -nostdlib -T hazard3_tb.ld -Map=$@.map --cref --gc-sections
 
