@@ -7,18 +7,22 @@ FROZEN_MANIFEST ?= manifest.py
 # MicroPython feature configurations
 MICROPY_ROM_TEXT_COMPRESSION ?= 1
 
+# Enable mbed-tls based ssl module
+MICROPY_PY_SSL ?= 1
+MICROPY_SSL_MBEDTLS ?= 1
+
 # include py core make definitions
 include $(TOP)/py/py.mk
 include $(TOP)/extmod/extmod.mk
 
-CROSS_COMPILE ?= riscv32-unknown-elf-
+CROSS_COMPILE ?= /opt/riscv/gcc16/bin/riscv32-unknown-elf-
 
 INC += -I.
 INC += -I$(TOP)
 INC += -I$(BUILD)
 
 # -fdisable-rtl-popretz is due to a GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=126454
-CFLAGS_MARCH = -march=rv32imab_zicsr_zifencei_zbkb_zca_zcb_zcmp -fdisable-rtl-popretz
+CFLAGS_MARCH = -march=rv32imab_zicsr_zifencei_zbkb_zca_zcb_zcmp_xh3bextm
 CFLAGS += $(INC) -Wall -Werror -std=c99 -nostdlib $(CFLAGS_MARCH) $(COPT)
 LDFLAGS += -nostdlib -T hazard3_tb.ld -Map=$@.map --cref --gc-sections
 
@@ -36,12 +40,13 @@ endif
 # Flags for optional C++ source code
 CXXFLAGS += $(filter-out -std=c99,$(CFLAGS))
 
-LIBS =
+LIBS = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 SRC_C = \
 	main.c \
 	uart_core.c \
 	mphalport.c \
+	mbedtls/mbedtls_port.c \
 	shared/libc/printf.c \
 	shared/readline/readline.c \
 	shared/runtime/pyexec.c \

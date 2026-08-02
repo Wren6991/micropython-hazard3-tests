@@ -38,3 +38,14 @@ uintptr_t mp_hal_stdio_poll(uintptr_t poll_flags) {
     (void)poll_flags;
     return 0;
 }
+
+// Random source for the mbed-tls entropy pool. No libc in this port so use a
+// small LCG; running in simulation so deterministic behaviour is expected.
+static uint32_t rng_state = 0x12345678u;
+
+void mp_hal_get_random(size_t n, uint8_t *buf) {
+    for (size_t i = 0; i < n; i++) {
+        rng_state = rng_state * 1103515245u + 12345u;
+        buf[i] = (uint8_t)(rng_state >> 16);
+    }
+}

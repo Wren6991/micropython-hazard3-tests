@@ -7,6 +7,9 @@
 #define MICROPY_ENABLE_COMPILER           (1)
 
 #define MICROPY_ENABLE_GC                 (1)
+
+// Enable the mbed-tls backed ssl module
+#define MICROPY_TRACKED_ALLOC            (1)
 #define MICROPY_HELPER_REPL               (1)
 #define MICROPY_ENABLE_EXTERNAL_IMPORT    (1)
 
