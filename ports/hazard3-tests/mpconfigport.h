@@ -18,7 +18,7 @@
 // Use the minimum headroom in the chunk allocator for parse nodes.
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT    (16)
 
-#define MICROPY_PY_SYS_STDFILES (0)
+#define MICROPY_PY_SYS_STDFILES (1)
 #define MICROPY_PY_UCTYPES (0)
 
 // todo remove -- think I just need to initialise the stack limit in my main.c
@@ -41,6 +41,5 @@ typedef long mp_off_t;
 
 #if defined(SIZE_MAX) && !defined(SSIZE_MAX)
 // Hack; this is not in the limits.h that ships with riscv-gnu-toolchain
-// builds for riscv32-unknown-elf triple:
 #define SSIZE_MAX (SIZE_MAX >> 1)
 #endif

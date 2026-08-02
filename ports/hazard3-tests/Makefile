@@ -45,12 +45,14 @@ SRC_C = \
 	shared/readline/readline.c \
 	shared/runtime/pyexec.c \
 	shared/runtime/stdout_helpers.c \
+	shared/runtime/sys_stdio_mphal.c \
 
 SRC_C += shared/libc/string0.c
 
 SRC_O += init.o
 
 SRC_QSTR += shared/readline/readline.c shared/runtime/pyexec.c
+SRC_QSTR += shared/runtime/sys_stdio_mphal.c
 
 OBJ += $(PY_O)
 OBJ += $(addprefix $(BUILD)/, $(SRC_O))

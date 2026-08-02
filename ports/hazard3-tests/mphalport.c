@@ -1,4 +1,5 @@
 #include "py/mphal.h"
+#include "py/stream.h"
 #include "tbio_regs.h"
 #include <limits.h>
 
@@ -31,4 +32,9 @@ mp_uint_t mp_hal_ticks_cpu(void) {
 
 uint64_t mp_hal_time_ns(void) {
     return 1000ull * mm_timer->mtime;
+}
+
+uintptr_t mp_hal_stdio_poll(uintptr_t poll_flags) {
+    (void)poll_flags;
+    return 0;
 }
