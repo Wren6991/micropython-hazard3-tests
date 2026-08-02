@@ -1164,7 +1164,11 @@ def run_tests(pyb, tests, args, result_dir, num_threads=1, pyb_pool=None):
     try:
         if num_threads > 1:
             pool = ThreadPool(num_threads, initializer=_init_worker)
-            pool.map(run_one_test, tests)
+            # imap_unordered with chunksize=1 pulls one test at a time from a
+            # shared queue, so a single long-running test can't strand a whole
+            # chunk of subsequent tests behind it on one worker's pyboard.
+            for _ in pool.imap_unordered(run_one_test, tests, chunksize=1):
+                pass
         else:
             for test in tests:
                 run_one_test(test)
