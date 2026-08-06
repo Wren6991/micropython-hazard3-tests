@@ -171,12 +171,13 @@ class ProcessToSerial:
     "Execute a process and emulate serial connection using its stdin/stdout."
 
     def __init__(self, cmd):
+        import shlex
         import subprocess
 
         self.subp = subprocess.Popen(
-            cmd,
+            shlex.split(cmd),
             bufsize=0,
-            shell=True,
+            shell=False,
             preexec_fn=os.setsid,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
