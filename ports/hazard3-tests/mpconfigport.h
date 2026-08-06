@@ -21,6 +21,10 @@
 // Use the minimum headroom in the chunk allocator for parse nodes.
 #define MICROPY_ALLOC_PARSE_CHUNK_INIT    (16)
 
+// Get the constants available in REPL -- note the cryptolib enable is in the
+// Makefile, following the pattern from other ports:
+#define MICROPY_PY_CRYPTOLIB_CONSTS (1)
+
 #define MICROPY_PY_SYS_STDFILES (1)
 #define MICROPY_PY_UCTYPES (0)
 

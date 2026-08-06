@@ -355,7 +355,7 @@ class Pyboard:
         self.serial.close()
 
     def read_until(
-        self, min_num_bytes, ending, timeout=10, data_consumer=None, timeout_overall=None
+        self, min_num_bytes, ending, timeout=None, data_consumer=None, timeout_overall=None
     ):
         """
         min_num_bytes: Obsolete.
@@ -397,7 +397,7 @@ class Pyboard:
                 time.sleep(0.01)
         return data
 
-    def enter_raw_repl(self, soft_reset=True, timeout_overall=10):
+    def enter_raw_repl(self, soft_reset=True, timeout_overall=100):
         try:
             self._enter_raw_repl_unprotected(soft_reset, timeout_overall)
         except OSError as er:
