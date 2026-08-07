@@ -2,7 +2,13 @@
 #include <alloca.h>
 #include <limits.h>
 
-#define MICROPY_CONFIG_ROM_LEVEL (MICROPY_CONFIG_ROM_LEVEL_EXTRA_FEATURES)
+#define MICROPY_CONFIG_ROM_LEVEL (MICROPY_CONFIG_ROM_LEVEL_EVERYTHING)
+
+#define MICROPY_PY_OS_UNAME     (1)
+#define MICROPY_PY_SYS_PLATFORM "hazard3"
+
+// EVERYTHING turns on marshal, whose loads() needs the persistent-code loader
+#define MICROPY_PERSISTENT_CODE_LOAD      (1)
 
 #define MICROPY_ENABLE_COMPILER           (1)
 
