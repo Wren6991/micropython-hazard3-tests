@@ -10,6 +10,9 @@
 // EVERYTHING turns on marshal, whose loads() needs the persistent-code loader
 #define MICROPY_PERSISTENT_CODE_LOAD      (1)
 
+// Enable soft-float via libgcc routines
+#define MICROPY_FLOAT_IMPL (MICROPY_FLOAT_IMPL_FLOAT)
+
 #define MICROPY_ENABLE_COMPILER           (1)
 
 #define MICROPY_ENABLE_GC                 (1)

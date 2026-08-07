@@ -40,12 +40,13 @@ endif
 # Flags for optional C++ source code
 CXXFLAGS += $(filter-out -std=c99,$(CFLAGS))
 
-LIBS = $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
+LIBS = $(shell $(CC) -print-file-name=libm.a) $(shell $(CC) $(CFLAGS) -print-libgcc-file-name)
 
 SRC_C = \
 	main.c \
 	uart_core.c \
 	mphalport.c \
+	reent_stub.c \
 	mbedtls/mbedtls_port.c \
 	shared/libc/printf.c \
 	shared/readline/readline.c \
