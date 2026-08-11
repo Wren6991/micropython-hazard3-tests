@@ -57,6 +57,7 @@ SRC_C = \
 SRC_C += shared/libc/string0.c
 
 SRC_O += init.o
+SRC_O += shared/runtime/gchelper_native.o shared/runtime/gchelper_rv32i.o
 
 SRC_QSTR += shared/readline/readline.c shared/runtime/pyexec.c
 SRC_QSTR += shared/runtime/sys_stdio_mphal.c
