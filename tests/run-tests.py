@@ -122,6 +122,11 @@ platform_tests_to_skip = {
     "esp8266": (
         "stress/list_sort.py",  # watchdog kicks in because it takes too long
     ),
+    "hazard3": (
+        # GC behaviour is nondeterministic and the weakref'd objects are conservatively not collected.
+        "basics/weakref_callback_exception.py",
+        "basics/weakref_finalize_collect.py",
+    ),
     "minimal": (
         "basics/class_inplace_op.py",  # all special methods not supported
         "basics/subclass_native_init.py",  # native subclassing corner cases not support

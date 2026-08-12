@@ -260,8 +260,8 @@ complex_nested = t"""Users:
 print(f"Complex nested: {str(complex_nested)}")
 print(f"   Values: {complex_nested.values}")
 
-import os
-path_sep = os.sep
+# Hazard3-specific hack: no VFS on this port, so os.sep isn't available.
+path_sep = "/"
 raw_with_interp = rt"""Path: C:\Users\{path_sep}Documents
 Raw newline: \n
 Raw tab: \t"""
