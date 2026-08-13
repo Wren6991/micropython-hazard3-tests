@@ -7,6 +7,9 @@ import argparse
 import re
 from glob import glob
 from collections import defaultdict
+import multiprocessing
+from multiprocessing.pool import ThreadPool
+import threading
 
 from test_utils import (
     base_path,
@@ -57,60 +60,79 @@ def execbench(test_instance, filename, iters):
     return test_instance.exec(code, timeout=TEST_TIMEOUT).replace(b"\r\n", b"\n")
 
 
-def run_tests(test_instance, test_dict, iters):
-    test_count = 0
-    testcase_count = 0
+def run_tests(test_instance, test_dict, iters, num_threads=1, pyb_pool=None):
+    # Assign each worker thread its own pyboard instance for parallel exec: targets.
+    _worker_pyb = threading.local()
+    _pyb_iter = iter(pyb_pool) if pyb_pool else None
 
-    for base_test, tests in sorted(test_dict.items()):
-        print(base_test + ":")
-        baseline = None
-        for test_file in tests:
-            # run MicroPython
-            error_info = None
-            if isinstance(test_instance, list):
-                # run on PC
-                try:
-                    output_mupy = subprocess.check_output(test_instance + [test_file[0]])
-                except subprocess.CalledProcessError:
-                    output_mupy = b"CRASH"
-            else:
-                # run on pyboard
-                test_instance.enter_raw_repl()
-                try:
-                    output_mupy = execbench(test_instance, test_file[0], iters)
-                except pyboard.PyboardError as er:
-                    output_mupy = b"CRASH"
-                    error_info = er
+    def _init_worker():
+        if _pyb_iter is not None:
+            _worker_pyb.pyb = next(_pyb_iter)
 
-            raw_output = output_mupy
+    def run_one_test(entry):
+        _, test_file = entry
+        this_test_instance = (
+            getattr(_worker_pyb, "pyb", None) if _pyb_iter is not None else test_instance
+        )
+        error_info = None
+        if isinstance(this_test_instance, list):
+            # run on PC
             try:
-                output_mupy = float(output_mupy.strip())
-            except ValueError:
-                output_mupy = -1
-                print("    full output for %s:" % test_file[0])
-                if error_info is not None:
-                    for part in error_info.args:
-                        if isinstance(part, bytes):
-                            print(part.decode("utf-8", "replace"))
-                        else:
-                            print(part)
-                else:
-                    print(raw_output.decode("utf-8", "replace"))
-            test_file[1] = output_mupy
-            testcase_count += 1
+                output_mupy = subprocess.check_output(this_test_instance + [test_file])
+            except subprocess.CalledProcessError:
+                output_mupy = b"CRASH"
+        else:
+            # run on pyboard
+            this_test_instance.enter_raw_repl()
+            try:
+                output_mupy = execbench(this_test_instance, test_file, iters)
+            except pyboard.PyboardError as er:
+                output_mupy = b"CRASH"
+                error_info = er
 
-            if baseline is None:
-                baseline = test_file[1]
-            print(
-                "    %.3fs (%+06.2f%%) %s"
-                % (test_file[1], (test_file[1] * 100 / baseline) - 100, test_file[0])
-            )
+        raw_output = output_mupy
+        try:
+            timing = float(output_mupy.strip())
+        except ValueError:
+            timing = -1
+        return test_file, timing, raw_output, error_info
 
-        test_count += 1
+    def report(test_file, timing, raw_output, error_info):
+        if timing == -1:
+            print("    %s: -1 (full output follows)" % test_file)
+            if error_info is not None:
+                for part in error_info.args:
+                    if isinstance(part, bytes):
+                        print(part.decode("utf-8", "replace"))
+                    else:
+                        print(part)
+            else:
+                print(raw_output.decode("utf-8", "replace"))
+        else:
+            print("    %.3fs %s" % (timing, test_file))
 
-    print("{} tests performed ({} individual testcases)".format(test_count, testcase_count))
+    flat_tests = [
+        (base_test, test_file[0])
+        for base_test, tests in sorted(test_dict.items())
+        for test_file in tests
+    ]
 
-    # all tests succeeded
+    if not isinstance(test_instance, list) and pyb_pool is None:
+        num_threads = 1
+    if pyb_pool is not None:
+        num_threads = min(num_threads, len(pyb_pool))
+
+    if num_threads > 1:
+        pool = ThreadPool(num_threads, initializer=_init_worker)
+        # imap_unordered with chunksize=1 pulls one test at a time from a
+        # shared queue, so a single long-running test can't strand a whole
+        # chunk of subsequent tests behind it on one worker's pyboard.
+        for result in pool.imap_unordered(run_one_test, flat_tests, chunksize=1):
+            report(*result)
+    else:
+        for entry in flat_tests:
+            report(*run_one_test(entry))
+
     return True
 
 
@@ -142,6 +164,14 @@ def main():
         default=200_000,
         help="number of test iterations, only for remote instances (default 200,000)",
     )
+    cmd_parser.add_argument(
+        "-j",
+        "--jobs",
+        default=multiprocessing.cpu_count(),
+        metavar="N",
+        type=int,
+        help="Number of tests to run simultaneously",
+    )
     cmd_parser.add_argument("files", nargs="*", help="input test files")
     args = cmd_parser.parse_args()
 
@@ -154,6 +184,14 @@ def main():
         )
         if test_instance is None:
             test_instance = MICROPYTHON_CMD
+
+    # For exec: targets, spawn additional instances for parallel test execution.
+    pyb_pool = None
+    if args.test_instance.startswith("exec:") and args.jobs > 1:
+        pyb_pool = [test_instance] + [
+            get_test_instance(args.test_instance, args.baudrate, args.user, args.password)
+            for _ in range(args.jobs - 1)
+        ]
 
     if len(args.files) == 0:
         if args.test_dirs:
@@ -177,8 +215,15 @@ def main():
             continue
         test_dict[m.group(1)].append([t, None])
 
-    if not run_tests(test_instance, test_dict, args.iters):
-        sys.exit(1)
+    try:
+        if not run_tests(test_instance, test_dict, args.iters, args.jobs, pyb_pool):
+            sys.exit(1)
+    finally:
+        if pyb_pool:
+            for p in pyb_pool:
+                p.close()
+        elif not isinstance(test_instance, list):
+            test_instance.close()
 
 
 if __name__ == "__main__":
