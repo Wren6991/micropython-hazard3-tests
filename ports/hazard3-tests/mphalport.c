@@ -5,6 +5,17 @@
 
 // MTIME/MTIMEH is assumed to be a microsecond timebase
 
+mp_uint_t mp_hal_ticks_ms(void) {
+    uint32_t h0, l, h1;
+    do {
+        h0 = mm_timer->mtimeh;
+        l = mm_timer->mtime;
+        h1 = mm_timer->mtimeh;
+    } while (h0 != h1);
+    uint64_t us = ((uint64_t)h1 << 32) | (uint64_t)l;
+    return us / 1000ull;
+}
+
 mp_uint_t mp_hal_ticks_us(void) {
     return mm_timer->mtime;
 }
