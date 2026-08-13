@@ -15,6 +15,7 @@ from test_utils import (
     test_instance_epilog,
     test_directory_description,
     get_test_instance,
+    TEST_TIMEOUT,
 )
 
 if os.name == "nt":
@@ -53,7 +54,7 @@ def execbench(test_instance, filename, iters):
     with open(filename, "rb") as f:
         pyfile = f.read()
     code = (injected_bench_code + pyfile).replace(b"20000000", str(iters).encode("utf-8"))
-    return test_instance.exec(code).replace(b"\r\n", b"\n")
+    return test_instance.exec(code, timeout=TEST_TIMEOUT).replace(b"\r\n", b"\n")
 
 
 def run_tests(test_instance, test_dict, iters):
@@ -65,6 +66,7 @@ def run_tests(test_instance, test_dict, iters):
         baseline = None
         for test_file in tests:
             # run MicroPython
+            error_info = None
             if isinstance(test_instance, list):
                 # run on PC
                 try:
@@ -76,13 +78,24 @@ def run_tests(test_instance, test_dict, iters):
                 test_instance.enter_raw_repl()
                 try:
                     output_mupy = execbench(test_instance, test_file[0], iters)
-                except pyboard.PyboardError:
+                except pyboard.PyboardError as er:
                     output_mupy = b"CRASH"
+                    error_info = er
 
+            raw_output = output_mupy
             try:
                 output_mupy = float(output_mupy.strip())
             except ValueError:
                 output_mupy = -1
+                print("    full output for %s:" % test_file[0])
+                if error_info is not None:
+                    for part in error_info.args:
+                        if isinstance(part, bytes):
+                            print(part.decode("utf-8", "replace"))
+                        else:
+                            print(part)
+                else:
+                    print(raw_output.decode("utf-8", "replace"))
             test_file[1] = output_mupy
             testcase_count += 1
 
