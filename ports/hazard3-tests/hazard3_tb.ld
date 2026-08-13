@@ -5,7 +5,7 @@
 /* Specify the memory areas */
 MEMORY
 {
-    RAM (xrw)       : ORIGIN = 0x80000000, LENGTH = 2M
+    RAM (xrw)       : ORIGIN = 0x80000000, LENGTH = 1M
 }
 
 /* top end of the stack */

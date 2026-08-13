@@ -33,11 +33,10 @@ static char heap[MICROPY_HEAP_SIZE];
 #endif
 
 extern char _estack;
-extern char _ebss;
 
 int main(int argc, char **argv) {
 soft_reboot:
-    mp_cstack_init_with_top(&_estack, (size_t)(&_estack - &_ebss));
+    mp_cstack_init_with_top(&_estack, 64 * 1024);
 
     #if MICROPY_ENABLE_GC
     gc_init(heap, heap + sizeof(heap));
