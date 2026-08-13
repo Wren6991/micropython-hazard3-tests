@@ -37,9 +37,6 @@
 #define MICROPY_PY_SYS_STDFILES (1)
 #define MICROPY_PY_UCTYPES (0)
 
-// todo remove -- think I just need to initialise the stack limit in my main.c
-#define MICROPY_STACK_CHECK (0)
-
 #define MICROPY_PY_MATH_GAMMA_FIX_NEGINF (1)
 
 #define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
@@ -55,7 +52,7 @@ typedef long mp_off_t;
 #define MICROPY_HW_BOARD_NAME "hazard3-testbench"
 #define MICROPY_HW_MCU_NAME "Hazard3"
 
-#define MICROPY_HEAP_SIZE      (256 * 1024)
+#define MICROPY_HEAP_SIZE      (1024 * 1024)
 
 #define MP_STATE_PORT MP_STATE_VM
 

@@ -28,16 +28,16 @@ void do_str(const char *src, mp_parse_input_kind_t input_kind) {
 }
 #endif
 
-static char *stack_top;
 #if MICROPY_ENABLE_GC
 static char heap[MICROPY_HEAP_SIZE];
 #endif
 
+extern char _estack;
+extern char _ebss;
+
 int main(int argc, char **argv) {
 soft_reboot:
-    int stack_dummy;
-    stack_top = (char *)&stack_dummy;
-    MP_STATE_THREAD(stack_top) = stack_top;
+    mp_cstack_init_with_top(&_estack, (size_t)(&_estack - &_ebss));
 
     #if MICROPY_ENABLE_GC
     gc_init(heap, heap + sizeof(heap));
