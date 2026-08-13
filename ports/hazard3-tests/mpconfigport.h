@@ -40,6 +40,10 @@
 // todo remove -- think I just need to initialise the stack limit in my main.c
 #define MICROPY_STACK_CHECK (0)
 
+#define MICROPY_PY_MATH_GAMMA_FIX_NEGINF (1)
+
+#define MICROPY_ENABLE_EMERGENCY_EXCEPTION_BUF (1)
+
 #define MICROPY_LONGINT_IMPL (MICROPY_LONGINT_IMPL_MPZ)
 
 // type definitions for the specific machine
