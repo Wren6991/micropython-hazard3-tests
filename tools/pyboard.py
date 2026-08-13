@@ -99,6 +99,10 @@ class PyboardError(Exception):
         return self
 
 
+class ProcessToSerialExitError(PyboardError):
+    pass
+
+
 listdir_result = namedtuple("dir_result", ["name", "st_mode", "st_ino", "st_size"])
 
 
@@ -171,11 +175,15 @@ class ProcessToSerial:
     "Execute a process and emulate serial connection using its stdin/stdout."
 
     def __init__(self, cmd):
+        self.cmd = cmd
+        self._spawn()
+
+    def _spawn(self):
         import shlex
         import subprocess
 
         self.subp = subprocess.Popen(
-            shlex.split(cmd),
+            shlex.split(self.cmd),
             bufsize=0,
             shell=False,
             preexec_fn=os.setsid,
@@ -197,15 +205,28 @@ class ProcessToSerial:
         self.poll = select.poll()
         self.poll.register(self.subp.stdout.fileno())
 
+    def restart(self):
+        self.close()
+        self._spawn()
+
     def close(self):
         import signal
 
-        os.killpg(os.getpgid(self.subp.pid), signal.SIGTERM)
+        try:
+            os.killpg(os.getpgid(self.subp.pid), signal.SIGTERM)
+        except ProcessLookupError:
+            pass
 
     def read(self, size=1):
         data = b""
         while len(data) < size:
-            data += self.subp.stdout.read(size - len(data))
+            chunk = self.subp.stdout.read(size - len(data))
+            if chunk:
+                data += chunk
+            elif self.subp.poll() is not None:
+                raise ProcessToSerialExitError(
+                    "process exited with code {}".format(self.subp.returncode)
+                )
         return data
 
     def write(self, data):
@@ -354,6 +375,12 @@ class Pyboard:
 
     def close(self):
         self.serial.close()
+
+    def restart(self):
+        # Relaunch the underlying process (used by exec: targets), to recover
+        # after the child process exits, e.g. due to an unhandled exception.
+        self.serial.restart()
+        self.in_raw_repl = False
 
     def read_until(
         self, min_num_bytes, ending, timeout=None, data_consumer=None, timeout_overall=None

@@ -302,6 +302,11 @@ def run_script_on_remote_target(pyb, args, test_file, is_special, requires_targe
 
         # Execute the test, and collect the output.
         pyb.exec_(script, timeout=TEST_TIMEOUT, data_consumer=data_consumer)
+    except pyboard.ProcessToSerialExitError as e:
+        had_crash = True
+        data_consumer(bytes(e.args[0], "ascii") + b"\n")
+        output_mupy += b"CRASH"
+        pyb.restart()
     except pyboard.PyboardError as e:
         had_crash = True
         if not is_special and e.args[0] == "exception":
