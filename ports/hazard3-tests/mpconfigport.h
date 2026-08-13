@@ -13,6 +13,9 @@
 // Enable soft-float via libgcc routines
 #define MICROPY_FLOAT_IMPL (MICROPY_FLOAT_IMPL_FLOAT)
 
+#define MICROPY_EMIT_RV32 (1)
+#define MICROPY_EMIT_INLINE_ASM_RV32 (1)
+
 #define MICROPY_ENABLE_COMPILER           (1)
 
 #define MICROPY_ENABLE_GC                 (1)
@@ -35,7 +38,7 @@
 #define MICROPY_PY_CRYPTOLIB_CONSTS (1)
 
 #define MICROPY_PY_SYS_STDFILES (1)
-#define MICROPY_PY_UCTYPES (0)
+#define MICROPY_PY_UCTYPES (1)
 
 #define MICROPY_PY_MATH_GAMMA_FIX_NEGINF (1)
 
