@@ -42,11 +42,11 @@ class bench_class:
 
     @staticmethod
     def run(test):
-        t = time.ticks_us()
+        t = time.ticks_ms()
         test(bench_class.ITERS)
-        t = time.ticks_diff(time.ticks_us(), t)
-        s, us = divmod(t, 1_000_000)
-        print("{}.{:06}".format(s, us))
+        t = time.ticks_ms() - t
+        s, ms = divmod(t, 1000)
+        print("{}.{:03}".format(s, ms))
 
 import sys
 sys.modules['bench'] = bench_class
