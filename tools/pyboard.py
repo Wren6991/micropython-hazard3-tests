@@ -186,7 +186,6 @@ class ProcessToSerial:
             shlex.split(self.cmd),
             bufsize=0,
             shell=False,
-            preexec_fn=os.setsid,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
         )
@@ -213,7 +212,7 @@ class ProcessToSerial:
         import signal
 
         try:
-            os.killpg(os.getpgid(self.subp.pid), signal.SIGTERM)
+            os.kill(self.subp.pid, signal.SIGTERM)
         except ProcessLookupError:
             pass
 
