@@ -126,6 +126,8 @@ platform_tests_to_skip = {
         # GC behaviour is nondeterministic and the weakref'd objects are conservatively not collected.
         "basics/weakref_callback_exception.py",
         "basics/weakref_finalize_collect.py",
+        # Soft-float division in the timed section is just too slow in sim with ~real-time 1us tick.
+        "extmod/time_res.py",
     ),
     "minimal": (
         "basics/class_inplace_op.py",  # all special methods not supported
